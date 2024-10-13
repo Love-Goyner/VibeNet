@@ -11,13 +11,16 @@ cloudinary.config({
 const uplodeOnCloudinary = async (localFilePath) => {
     try {
         if(!localFilePath) return null
+
         //uplode the file
         const response =  await cloudinary.uploader.upload(localFilePath, {
             resource_type: "auto"
         })
+
         //file is uploded successfully
         fs.unlinkSync(localFilePath)
         return response
+
     } catch (error) {
         fs.unlinkSync(localFilePath)
         return null
