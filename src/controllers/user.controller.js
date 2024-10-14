@@ -27,17 +27,21 @@ const registerUser = asyncHandler(async (req, res)=>{
     }
 
     //Check if User Exist
-    const existedUser = User.findOne({
+    const existedUser = await User.findOne({
         $or : [{username}, {email}]
     })
 
     if(existedUser){
         throw new ApiError(409, "User Already Exist")
     }
+    
 
     //Check for Avatar and CoverImage
     const avatarLocalPath = req.files?.avatar[0]?.path
-    const coverImageLocalPath = req.files?.coverImage[0]?.path
+    let coverImageLocalPath
+    if(req.files && Array.isArray(req.files.coverImage) && req.files.coverImage.length > 0){
+        coverImageLocalPath = req.files?.coverImage[0]?.path
+    }
 
     if(!avatarLocalPath){
         throw new ApiError(400, "Avatar file is Required")
@@ -62,7 +66,7 @@ const registerUser = asyncHandler(async (req, res)=>{
     })
 
     //Remove Password and Refresh Token Field From Response
-    const createdUser = await user.findByID(user._id).select(
+    const createdUser = await User.findById(user._id).select(
         "-password -refreshToken"
     )
 

@@ -23,6 +23,7 @@ const uplodeOnCloudinary = async (localFilePath) => {
 
     } catch (error) {
         fs.unlinkSync(localFilePath)
+        console.log("this is boy ",error);
         return null
     }
 }
