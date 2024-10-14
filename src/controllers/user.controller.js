@@ -13,7 +13,7 @@ const registerUser = asyncHandler(async (req, res)=>{
     // create user object - create entry in db
     // remove password and refresh token field from response
     // check for user creation
-    // return res
+    // return response
 
     //Get User Details
     const {fullName, email, username, password} = req.body;
@@ -73,7 +73,7 @@ const registerUser = asyncHandler(async (req, res)=>{
 
     //Return Response
     return res.status(201).json(
-        new ApiRespons(200, createdUser, "User Registered Successfully")
+        new ApiResponse(200, createdUser, "User Registered Successfully")
     )
 })
 
