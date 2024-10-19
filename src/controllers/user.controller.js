@@ -1,7 +1,7 @@
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import { User } from "../models/user.model.js";
-import { uplodeOnCloudinary } from "../utils/cloudinary.js";
+import { uplodeOnCloudinary,deleteFromCloudinary } from "../utils/cloudinary.js";
 import { ApiResponse } from "../utils/ApiRespons.js";
 import jwt from "jsonwebtoken";
 
@@ -328,30 +328,33 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
 });
 
 const updateUserCoverImage = asyncHandler(async (req, res) => {
-  //get coverimage new path uploded by the user
+  // Get the cover image path uploaded by the user
   const coverImageLocalPath = req.file?.path;
 
-  //check for validation
+  // Check for validation
   if (!coverImageLocalPath) {
-    throw new ApiError(400, "CoverImage  File is Missing");
+    throw new ApiError(400, "CoverImage file is missing");
   }
 
-  // Delete the old cover image from Cloudinary if it exists
-  if (user.coverImage) {
+  // Fetch the user from the database first
+  const user = await User.findById(req.user?._id);
+
+  // If the user exists, delete the old cover image from Cloudinary if it exists
+  if (user?.coverImage) {
     const publicId = user.coverImage.split("/").pop().split(".")[0]; // Extract the public ID from the URL
-    await cloudinary.uploader.destroy(publicId); // Delete the old image
+    await deleteFromCloudinary(publicId); // Delete the old image
   }
 
-  //uplode the new cover image to cloudinary
+  // Upload the new cover image to Cloudinary
   const coverImage = await uplodeOnCloudinary(coverImageLocalPath);
 
-  //check if the coverimage is uploded or not
-  if (!coverImage.url) {
-    throw new ApiError(400, "Error while Uploading coverImage");
+  // Check if the cover image is uploaded or not
+  if (!coverImage?.url) {
+    throw new ApiError(400, "Error while uploading coverImage");
   }
 
-  //change the coverimage url in the database
-  const user = await User.findByIdAndUpdate(
+  // Update the coverImage URL in the database
+  const updatedUser = await User.findByIdAndUpdate(
     req.user?._id,
     {
       $set: {
@@ -361,10 +364,10 @@ const updateUserCoverImage = asyncHandler(async (req, res) => {
     { new: true }
   ).select("-password");
 
-  //send response to the user
+  // Send response to the user
   return res
     .status(200)
-    .json(new ApiResponse(200, user, "coverImage Image Updated Successfully"));
+    .json(new ApiResponse(200, updatedUser, "Cover image updated successfully"));
 });
 
 const getUserChannelProfile = asyncHandler(async (req, res) => {
