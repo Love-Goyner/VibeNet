@@ -1,7 +1,11 @@
 import { asyncHandler } from "../utils/asyncHandler.js";
+import mongoose from "mongoose";
 import { ApiError } from "../utils/ApiError.js";
 import { User } from "../models/user.model.js";
-import { uplodeOnCloudinary,deleteFromCloudinary } from "../utils/cloudinary.js";
+import {
+  uplodeOnCloudinary,
+  deleteFromCloudinary,
+} from "../utils/cloudinary.js";
 import { ApiResponse } from "../utils/ApiRespons.js";
 import jwt from "jsonwebtoken";
 
@@ -247,8 +251,18 @@ const changeCurentPassword = asyncHandler(async (req, res) => {
   //Get data from frontend
   const { oldPassword, newPassword } = req.body;
 
+  //check for the old password validity
+  if (!oldPassword) {
+    throw new ApiError(400, "Old Password is required");
+  }
+
+  //check for the new password validity
+  if (!newPassword) {
+    throw new ApiError(400, "New Password is required");
+  }
+
   //find user by the req which is received by the jwt verify step for accessToken
-  const user = User.findById(req.user?._id);
+  const user = await User.findById(req.user?._id);
   const isPasswordCorrect = await user.isPasswordCorrect(oldPassword);
 
   //check if it correct or not
@@ -312,6 +326,15 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Error while Uploading Avatar");
   }
 
+  // Fetch the user from the database first
+  const currentUser = await User.findById(req.user?._id);
+
+  // If the user exists, delete the old cover image from Cloudinary if it exists
+  if (currentUser?.avatar) {
+    const publicId = currentUser.avatar.split("/").pop().split(".")[0]; // Extract the public ID from the URL
+    await deleteFromCloudinary(publicId); // Delete the old image
+  }
+
   const user = await User.findByIdAndUpdate(
     req.user._id,
     {
@@ -367,7 +390,9 @@ const updateUserCoverImage = asyncHandler(async (req, res) => {
   // Send response to the user
   return res
     .status(200)
-    .json(new ApiResponse(200, updatedUser, "Cover image updated successfully"));
+    .json(
+      new ApiResponse(200, updatedUser, "Cover image updated successfully")
+    );
 });
 
 const getUserChannelProfile = asyncHandler(async (req, res) => {
@@ -430,12 +455,12 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
     },
   ]);
 
-  if (channel?.length) {
+  if (!channel?.length) {
     throw new ApiError(404, "Channal is not Found");
   }
 
   return res
-    .send(200)
+    .status(200)
     .json(
       new ApiResponse(200, channel[0], "User Channel fetched Successfully")
     );

@@ -40,6 +40,7 @@ router.route("/change-password").post(varifyJWT, changeCurentPassword);
 router.route("/current-user").get(varifyJWT, getCurrentUser);
 router.route("/update-account").patch(varifyJWT, updateAccountDetails);
 
+//updating the user images
 router.route("/avatar").patch(varifyJWT, upload.single("avatar"), updateUserAvatar);
 router.route("/cover-image").patch(varifyJWT, upload.single("coverImage"), updateUserCoverImage);
 
